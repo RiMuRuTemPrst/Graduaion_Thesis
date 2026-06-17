@@ -1,0 +1,225 @@
+\documentclass[11pt]{report}
+\usepackage[margin=1in]{geometry}
+
+% Core packages
+\usepackage{amsmath,amssymb}
+\usepackage{tikz-cd}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{xcolor}
+
+% Paragraphs
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1\baselineskip}
+
+
+% Chapter heading format
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\centering\Large}
+  {CHAPTER \thechapter.}
+  {0.5em}
+  {\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{-10pt}{24pt}
+\newcommand{\missingcite}{\textcolor{red}{[citation needed]}}
+
+
+\title{Untitled}
+\author{Author Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+\listoffigures
+\clearpage
+
+\chapter{Introduction}
+
+
+\chapter{Theoretical Background}
+
+This chapter presents the theoretical background for the thesis topic \textit{Hardware-Software Co-Design of a Quantized HiFiC GAN Accelerator for Learned Image Compression}. Since the proposed system targets an image compression model based on deep neural networks, the chapter first introduces Convolutional Neural Networks (CNNs), which form the computational foundation of many modern image analysis and image generation architectures. The discussion covers the basic concept of CNNs, common layers, the convolution operation, and the advantages and limitations of CNN-based models when they are deployed on hardware platforms. This background provides the basis for later chapters, where quantization, hardware acceleration, and hardware-software integration are applied to improve the execution efficiency of the HiFiC GAN compression model.
+
+\section{Convolutional Neural Networks}
+
+\subsection{Overview of Convolutional Neural Networks}
+
+Convolutional Neural Networks (CNNs) are a major class of deep learning models designed for processing data with spatial structure. They are especially effective for two-dimensional visual data such as images, where neighboring pixels usually have strong correlations. Instead of treating every input element independently, CNNs exploit local spatial relationships through convolutional filters. This property makes CNNs suitable for many computer vision tasks, including image classification, object detection, image segmentation, image restoration, and learned image compression.
+
+The operation of a CNN can be interpreted as a hierarchical feature extraction process. In the first layers, the network usually learns simple visual patterns such as edges, corners, color transitions, and local textures. As the data propagates through deeper layers, these low-level patterns are gradually combined into more abstract representations, such as object parts, semantic regions, or compact latent features. In learned image compression systems, this hierarchical representation is important because the encoder network must transform the input image into a compressed latent representation while preserving perceptually meaningful information for the decoder.
+
+A general CNN architecture is shown in Figure~\ref{fig:cnn-overview}. The input image is processed by a sequence of convolutional blocks. Each block commonly contains a convolutional layer, a nonlinear activation function, and sometimes additional operations such as normalization or pooling. For image compression and generative models, the network may also include down-sampling layers in the encoder to reduce spatial resolution and produce compact latent features.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{prism-uploads/overview_CNN.png}
+    \caption{General structure of a convolutional neural network}
+    \label{fig:cnn-overview}
+\end{figure}
+
+Compared with a fully connected neural network, a CNN requires fewer parameters for image-related tasks because it uses local connectivity and weight sharing. In a fully connected layer, each output neuron is connected to all input elements, which leads to a very large number of parameters for high-resolution images. In contrast, a convolutional layer uses a small kernel that slides across the input feature map. The same kernel weights are reused at different spatial locations, enabling the network to detect similar features regardless of their positions in the image. This mechanism reduces memory requirements and improves generalization.
+
+\subsection{Fundamental Layers in CNN Architecture}
+
+A CNN is constructed from several types of layers. Each layer has a specific role in transforming the input data into useful feature representations. The most common components are convolutional layers, activation layers, pooling or down-sampling layers, and fully connected layers. In modern image compression and generative architectures, fully connected layers are often avoided or used only in small auxiliary networks because convolutional layers are more efficient for preserving spatial structure.
+
+\subsubsection{Convolutional Layer}
+
+The convolutional layer is the main computational component of a CNN. Its purpose is to extract local features from the input by applying a set of learnable kernels. For an input feature map, each kernel scans over local receptive fields and produces one output feature map. When multiple kernels are used, the layer generates multiple output channels, where each channel corresponds to a different learned feature detector.
+
+The convolution operation is illustrated in Figure~\ref{fig:cnn-convolutional-layer}. At each spatial position, the kernel values are multiplied by the corresponding input values, and the products are accumulated to form one output value. This multiply-accumulate pattern dominates the computational cost of CNN inference and is therefore a key target for hardware acceleration.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.82\textwidth]{prism-uploads/conv.png}
+    \caption{Illustration of a convolution operation in a CNN layer}
+    \label{fig:cnn-convolutional-layer}
+\end{figure}
+
+For a convolutional layer, the spatial size of the output feature map depends on the input size, kernel size, stride, and padding. If the input height and width are denoted by $H$ and $W$, the kernel height and width by $K_h$ and $K_w$, the padding by $P$, and the stride by $S$, then the output height $H_{out}$ and output width $W_{out}$ can be calculated as
+\begin{equation}
+H_{out} = \left\lfloor \frac{H - K_h + 2P}{S} \right\rfloor + 1,
+\end{equation}
+\begin{equation}
+W_{out} = \left\lfloor \frac{W - K_w + 2P}{S} \right\rfloor + 1.
+\end{equation}
+
+Stride controls how far the kernel moves after each computation. A larger stride reduces the output resolution and decreases the number of operations. Padding adds values, usually zeros, around the input boundary so that border information can be included in the convolution. Padding is also used to preserve the spatial size of feature maps when necessary.
+
+\subsubsection{Activation Function}
+
+A convolution operation is linear. Therefore, activation functions are inserted after convolutional layers to introduce nonlinearity into the network. Without nonlinear activation, a deep stack of convolutional layers would still be equivalent to a linear transformation and would have limited representational power. Common activation functions include Rectified Linear Unit (ReLU), sigmoid, hyperbolic tangent (tanh), and Swish.
+
+ReLU is widely used because of its simple hardware-friendly computation and its ability to reduce the vanishing gradient problem. It is defined as
+\begin{equation}
+f(x) = \max(0, x).
+\end{equation}
+
+For more complex neural networks, other activation functions may be selected to improve accuracy or perceptual quality. In hardware implementation, the activation function must be considered carefully because nonlinear functions such as sigmoid or Swish are more expensive to implement than ReLU. For a quantized accelerator, this issue becomes even more important because the activation function must be compatible with fixed-point arithmetic and efficient lookup or approximation methods.
+
+\subsubsection{Pooling and Down-Sampling Layers}
+
+Pooling layers reduce the spatial size of feature maps. This operation lowers computational complexity, decreases memory usage, and makes the learned representation more robust to small spatial shifts in the input image. The most common pooling methods are max pooling and average pooling. Max pooling selects the largest value in each local window, while average pooling computes the mean value of the window.
+
+In many modern CNN-based compression and generation models, down-sampling may be performed by strided convolution instead of a separate pooling layer. Strided convolution has learnable parameters, so it can reduce resolution while also extracting features. This approach is useful in encoder networks, where the image must be transformed into a lower-resolution latent representation.
+
+\section{Generative Adversarial Networks}
+
+Generative Adversarial Networks (GANs) are a class of generative models designed to learn the distribution of real data and synthesize new samples that appear realistic. A typical GAN consists of two neural networks trained in competition: a generator and a discriminator. The generator attempts to produce data samples that resemble the training distribution, while the discriminator attempts to distinguish generated samples from real samples. Through this adversarial training process, the generator gradually improves its ability to create outputs that are visually plausible. \textcolor{red}{[Goodfellow et al., 2014]}
+
+In image-related applications, GANs are particularly useful because they can encourage outputs to match the perceptual characteristics of natural images rather than only minimizing pixel-wise error. This is important because traditional distortion metrics, such as Mean Squared Error (MSE), often favor overly smooth reconstructions when the compression ratio is high. Although such reconstructions may achieve acceptable numerical distortion, they can lose fine textures and perceptually important details. GAN-based objectives address this limitation by comparing the distribution of reconstructed images with the distribution of real images, thereby improving perceptual realism. \textcolor{red}{[Blau and Michaeli, 2018]} \textcolor{red}{[Mentzer et al., 2020]}
+
+The use of GANs in learned image compression is motivated by the rate--distortion--perception trade-off. At a fixed bitrate, optimizing only distortion does not necessarily lead to the best perceptual quality. Conversely, improving perceptual quality may increase the measured distortion between the original and reconstructed images. Therefore, GAN-based compression methods introduce an adversarial loss to guide the reconstruction toward the natural image manifold. This makes the reconstructed image visually more convincing, especially at low bitrates where classical codecs may produce blocking or banding artifacts and distortion-optimized neural codecs may produce blur. \textcolor{red}{[citation needed]}
+
+However, GAN-based compression models also introduce implementation challenges. The generator network usually contains many convolutional and residual blocks, which require substantial multiply-accumulate operations and memory bandwidth during inference. In addition, the numerical behavior of a GAN-based decoder can be sensitive to quantization because small changes in intermediate feature maps may affect perceptual details in the reconstructed image. These characteristics motivate a hardware-software co-design approach, where software handles model preparation and system control while hardware accelerates the most computationally intensive neural network blocks. \textcolor{red}{[citation needed]}
+
+\section{HiFiC GAN Architecture for Learned Image Compression}
+
+High-Fidelity Image Compression (HiFiC) is a GAN-based learned image compression framework that combines neural compression with adversarial learning to improve perceptual reconstruction quality. Instead of optimizing only for pixel-wise similarity, HiFiC aims to reconstruct images that are visually close to the input while maintaining practical bitrates. The original HiFiC study showed that GAN-based compression can produce high-fidelity reconstructions and can be evaluated using both perceptual metrics and human preference studies. \textcolor{red}{[Mentzer et al., 2020]}
+
+The overall HiFiC architecture used in this thesis can be divided into three main components: an encoder network, a hyperprior network, and a generator network, as shown in Figure~\ref{fig:hific-architecture}. The encoder transforms the input RGB image into a compact latent representation. This latent representation contains the information required for reconstruction while removing spatial redundancy from the input image. The hyperprior network models the statistical distribution of the latent variables and provides side information for more efficient entropy coding. Finally, the generator reconstructs the image from the compressed latent representation. \textcolor{red}{[citation needed]}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{prism-uploads/HiFiC.png}
+    \caption{Overview of the HiFiC GAN-based learned image compression architecture}
+    \label{fig:hific-architecture}
+\end{figure}
+
+The encoder is implemented as a sequence of convolutional blocks. Each block extracts hierarchical image features while reducing redundancy in the spatial domain. Unlike a conventional autoencoder trained only with a pixel-wise loss, the HiFiC encoder is optimized as part of a perceptual compression system. As a result, the latent representation is expected to preserve visually meaningful information that supports high-quality reconstruction at the decoder side. \textcolor{red}{[citation needed]}
+
+The hyperprior network improves compression efficiency by learning side information about the latent representation. This side information, often called hyper-latent variables, helps estimate the entropy model used for coding the compressed representation. A more accurate entropy model allows the system to assign shorter codes to more likely latent symbols, which reduces bitrate while maintaining reconstruction quality. \textcolor{red}{[citation needed]}
+
+The generator network is responsible for reconstructing the output image from the latent and hyper-latent information. In the referenced LSI design, the generator contains an initial convolutional block, multiple residual blocks, reconstruction blocks, and a final convolutional block. The residual blocks include convolution, normalization, activation functions, and skip connections. These skip connections improve feature reuse and help stabilize the reconstruction process. Because residual blocks contain repeated convolution-heavy operations, they dominate the computational workload and become a natural target for hardware acceleration. \textcolor{red}{[citation needed]}
+
+For the hardware-software co-design in this thesis, the generator is selected as the primary acceleration target because it contains most of the inference-time computation. The remaining components can be executed in software to preserve flexibility in model control, data formatting, and system integration. This partitioning provides a practical balance between hardware efficiency and software programmability, which is important for deploying a quantized HiFiC model on FPGA-based embedded platforms. \textcolor{red}{[citation needed]}
+
+\subsection{Advantages and Limitations of CNNs for Hardware Acceleration}
+
+CNNs have several advantages for hardware implementation. First, convolution operations contain a high degree of data reuse. The same weights are applied to many spatial positions, and neighboring output pixels often share overlapping input windows. This reuse can be exploited through on-chip buffers and parallel processing elements. Second, CNN layers are highly parallel because many output pixels and output channels can be computed independently. This parallelism is suitable for FPGA and ASIC accelerators. Third, CNN models can be optimized using quantization, pruning, and layer fusion to reduce computation and memory traffic.
+
+However, CNNs also create several hardware challenges. Deep CNNs require a large number of multiply-accumulate operations, which may exceed the capability of general-purpose processors when real-time performance is required. In addition, feature maps and model weights can occupy significant memory, leading to high bandwidth demand between external memory and the accelerator. Some layers, such as normalization and complex activation functions, may have irregular access patterns or nonlinear operations that are less straightforward to accelerate.
+
+For the quantized HiFiC GAN accelerator in this thesis, these advantages and limitations motivate a hardware-software co-design approach. The software side is responsible for model preparation, quantization, parameter management, and system control, while the hardware side accelerates the dominant CNN computations. By designing both sides together, the system can better satisfy the requirements of learned image compression, including high throughput, reduced resource usage, and acceptable reconstructed image quality.
+
+
+
+\section{Evaluation Metrics for GAN Accelerator and Image Compression}
+
+Evaluation metrics are required to assess both the hardware efficiency of the proposed GAN accelerator and the reconstruction quality of the learned image compression model. Since this thesis focuses on a quantized HiFiC GAN accelerator, the evaluation should consider two complementary aspects. The first aspect measures how efficiently the accelerator executes the neural network workload on hardware. The second aspect measures how close the reconstructed image is to the original image after compression and decompression.
+
+\subsection{Metrics for GAN Accelerator}
+
+The performance of a GAN accelerator can be evaluated using several hardware-oriented metrics. These metrics are adapted from common CNN accelerator evaluation criteria because the generator network in HiFiC is mainly composed of convolutional and residual blocks. Therefore, latency, throughput, inference speed, power consumption, power efficiency, and FPGA resource utilization are important indicators for analyzing the efficiency of the proposed design. \textcolor{red}{[citation needed]}
+
+Latency measures the time required by the accelerator to process one input image and produce the corresponding reconstructed output. In real-time or near-real-time image compression systems, lower latency is desirable because it reduces the waiting time between input acquisition and output reconstruction. If the accelerator requires $n_T$ clock cycles and the clock period is $T$, the latency can be written as
+\begin{equation}
+Latency = n_T \times T.
+\end{equation}
+Since the clock period is the inverse of the operating frequency $F$, the latency can also be expressed as
+\begin{equation}
+Latency = \frac{n_T}{F}.
+\end{equation}
+
+Throughput represents the amount of computation completed per second. For neural network accelerators, it is commonly expressed in Giga Operations Per Second (GOPS). A higher throughput indicates that the hardware can process more arithmetic operations in a fixed time interval. If the computational workload of the model is denoted by $Workload$ in GOPs, the throughput is calculated as
+\begin{equation}
+Throughput~(GOPS) = \frac{Workload~(GOPs)}{Latency~(s)}.
+\end{equation}
+
+Inference speed describes how many images or frames can be processed per second. It is usually measured in frames per second (fps). For an image compression accelerator, this metric indicates how many reconstructed images can be generated in one second. The inference speed is the inverse of latency:
+\begin{equation}
+Inference~Speed~(fps) = \frac{1}{Latency~(s)}.
+\end{equation}
+
+Power consumption is another important metric, especially for FPGA-based embedded systems. It indicates the amount of electrical power consumed by the accelerator during execution. The total power may include the power used for computation, on-chip memory access, external memory transfer, control logic, and input/output interfaces. Lower power consumption is beneficial for portable or energy-constrained systems.
+
+Power efficiency evaluates how much computational performance is achieved for each watt of power. It is calculated as the ratio between throughput and power consumption:
+\begin{equation}
+Power~Efficiency~(GOPS/W) = \frac{Throughput~(GOPS)}{Power~Consumption~(W)}.
+\end{equation}
+A higher value means that the accelerator can deliver more computation with less energy, which is desirable for practical deployment.
+
+Resource utilization is used to analyze how much of the FPGA fabric is occupied by the accelerator. The main resource metrics include logic utilization, DSP utilization, and BRAM utilization. Logic utilization reflects the amount of configurable logic used for control and data-path implementation. DSP utilization shows how many dedicated arithmetic blocks are used for multiply-accumulate operations. BRAM utilization indicates the amount of on-chip memory used for storing input feature maps, intermediate feature maps, weights, and temporary buffers. These metrics help determine whether the accelerator is compact, scalable, and suitable for the target FPGA platform.
+
+\subsection{Metrics for Image Compression}
+
+In addition to hardware metrics, image compression quality must be evaluated by comparing the reconstructed image with the original image. Two commonly used objective metrics are Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM). PSNR measures pixel-wise reconstruction fidelity, while SSIM evaluates structural similarity from a perceptual perspective. \textcolor{red}{[citation needed]}
+
+PSNR is derived from the Mean Squared Error (MSE) between the original image and the reconstructed image. For an image with height $H$, width $W$, and $C$ color channels, the MSE is defined as
+\begin{equation}
+MSE = \frac{1}{HWC}\sum_{i=1}^{H}\sum_{j=1}^{W}\sum_{k=1}^{C}\left(I(i,j,k)-\hat{I}(i,j,k)\right)^2,
+\end{equation}
+where $I$ is the original image and $\hat{I}$ is the reconstructed image. PSNR is then computed as
+\begin{equation}
+PSNR = 10\log_{10}\left(\frac{MAX_I^2}{MSE}\right),
+\end{equation}
+where $MAX_I$ is the maximum possible pixel value. For 8-bit images, $MAX_I = 255$. A higher PSNR generally indicates lower pixel-level distortion and better reconstruction fidelity.
+
+SSIM measures the similarity between two images by comparing luminance, contrast, and structural information. For two image patches $x$ and $y$, SSIM is commonly expressed as
+\begin{equation}
+SSIM(x,y) = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + \mu_y^2 + C_1)(\sigma_x^2 + \sigma_y^2 + C_2)},
+\end{equation}
+where $\mu_x$ and $\mu_y$ are the mean intensities, $\sigma_x^2$ and $\sigma_y^2$ are the variances, $\sigma_{xy}$ is the covariance between $x$ and $y$, and $C_1$, $C_2$ are small constants used to avoid numerical instability. SSIM values are usually in the range from 0 to 1, where a value closer to 1 indicates higher structural similarity.
+
+For the quantized HiFiC GAN accelerator, PSNR and SSIM provide useful objective indicators of reconstruction quality after quantization and hardware-oriented optimization. However, because GAN-based compression is designed to improve perceptual quality, these metrics should be interpreted together with perceptual evaluation and visual comparison. A reconstruction with slightly lower PSNR may still appear more natural if it preserves textures and perceptual details better than a distortion-optimized reconstruction. \textcolor{red}{[citation needed]}
+
+\section{Hardware Platform}
+
+The proposed accelerator is intended to be deployed on a Field-Programmable Gate Array (FPGA) platform. An FPGA is an integrated circuit that can be configured after manufacturing to implement a specific digital system. Unlike CPUs and GPUs, which execute instructions on a fixed architecture, an FPGA allows the designer to customize the hardware datapath, memory organization, and control logic according to the target algorithm. This flexibility makes FPGAs suitable for accelerating neural network workloads that require high parallelism, low latency, and efficient energy usage. \textcolor{red}{[citation needed]}
+
+An FPGA device is mainly composed of configurable logic blocks, programmable interconnects, on-chip memory resources, and dedicated arithmetic units. Configurable logic blocks are used to implement control circuits and custom datapaths. Programmable interconnects connect these logic blocks and allow the designer to build a complete hardware architecture. On-chip memory blocks, commonly referred to as Block RAM (BRAM), store intermediate feature maps, weights, partial sums, and temporary buffers. Dedicated Digital Signal Processing (DSP) slices are optimized for arithmetic operations such as multiplication and accumulation, which are dominant in convolutional neural networks and GAN generators.
+
+For deep neural network acceleration, FPGAs provide several important advantages. First, they support fine-grained parallelism, allowing multiple processing elements to operate at the same time. This property is useful for convolutional and residual blocks, where many output pixels and channels can be computed independently. Second, FPGAs allow customized dataflow architectures that can increase data reuse and reduce external memory access. Since memory transfer often consumes significant energy and limits performance, keeping frequently used data in on-chip buffers is important for efficient accelerator design. Third, FPGAs can support different numerical precisions, such as fixed-point, integer, or floating-point formats, making them suitable for quantized neural network implementation.
+
+In the context of the quantized HiFiC GAN accelerator, the FPGA platform is used to accelerate the computationally intensive generator network. The generator contains repeated convolutional and residual operations that can benefit from parallel multiply-accumulate units, pipelined execution, and local buffering. By mapping these operations to FPGA resources, the system can reduce inference latency and improve energy efficiency compared with executing the entire model on a general-purpose processor.
+
+However, FPGA implementation also introduces several design constraints. The available number of logic elements, DSP slices, and BRAM blocks is limited, so the accelerator architecture must be carefully optimized to fit the target device. In addition, the memory bandwidth between external memory and the FPGA fabric can become a bottleneck if feature maps and weights are transferred frequently. Therefore, an efficient FPGA-based accelerator must balance parallelism, resource utilization, memory access, and operating frequency.
+
+For this thesis, the hardware platform provides the physical foundation for hardware-software co-design. The software side prepares input data, controls execution, and manages communication with memory, while the FPGA accelerator performs the most time-consuming neural network computations. This division enables the system to preserve software flexibility while exploiting hardware-level parallelism for the quantized HiFiC GAN workload.
+
+\section{Chapter Conclusion}
+
+This section introduced the CNN background required for the design of a quantized HiFiC GAN accelerator. CNNs are effective for image-related tasks because they learn hierarchical spatial features through convolutional layers, nonlinear activation functions, and resolution-changing operations. At the same time, their computation and memory demands make dedicated acceleration necessary for efficient deployment. The following sections provide the foundation for discussing quantization and the hardware-software co-design methodology used in the proposed system.
+
+\end{document}

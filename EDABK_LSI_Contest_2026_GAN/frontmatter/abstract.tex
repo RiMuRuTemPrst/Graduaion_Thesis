@@ -1,0 +1,10 @@
+\section*{ABSTRACT}
+\phantomsection\addcontentsline{toc}{section}{ABSTRACT}
+Recent advances in deep learning have significantly improved image compression by enabling learned models to outperform traditional hand-crafted standards in both rate--distortion efficiency and perceptual quality. In particular, Generative Adversarial Network (GAN)-based approaches such as High-Fidelity Image Compression (HiFiC) have demonstrated strong capability in preserving fine visual details at low bitrates. However, the high computational complexity of GAN-based models poses major challenges for real-time deployment and embedded systems.
+
+This thesis presents a hardware--software co-design approach for learned image compression based on a quantized HiFiC GAN model. The proposed system targets the inference stage of the HiFiC pipeline, where computationally intensive components are accelerated on FPGA, while the remaining functions are executed in software. To enable efficient hardware implementation, the neural network is quantized to FP16 precision and implemented using High-Level Synthesis (HLS), allowing effective exploitation of parallelism and streamlined design development.
+
+The accelerator architecture adopts a streaming dataflow model with parallel processing elements to efficiently map convolutional operations onto hardware. The design is implemented and evaluated on the ZCU104 FPGA platform, demonstrating feasible operating frequency, acceptable resource utilization, and numerical accuracy comparable to software reference results.
+
+Experimental results indicate that the proposed hardware--software co-design framework provides an effective and practical solution for accelerating learned image compression models. This work highlights the potential of FPGA-based acceleration for advanced GAN-based image compression and serves as a foundation for future extensions toward more comprehensive hardware deployment.
+\cleardoublepage

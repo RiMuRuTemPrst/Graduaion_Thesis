@@ -1,0 +1,90 @@
+\section*{CHAPTER 1. INTRODUCTION}
+\phantomsection\addcontentsline{toc}{section}{CHAPTER 1. INTRODUCTION}
+\setcounter{section}{1}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+This chapter introduces the research project. It first explains the motivation for accelerating a GAN-based learned image compression model on FPGA and the challenges involved (Problem Statement). It then reviews notable previous works on CNN/GAN hardware accelerators, defines the functional and non-functional requirements that the proposed system must satisfy, and finally presents the implementation plan and the organization of the remainder of this thesis.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Problem Statement}
+
+In recent years, the rapid growth of multimedia content and high-resolution visual data has posed significant challenges in terms of storage, transmission, and real-time processing. Traditional image compression standards such as JPEG and JPEG2000, which rely on handcrafted transforms and fixed processing pipelines, have shown limitations when dealing with complex image statistics and high compression ratios. As a result, learned image compression based on deep learning techniques has emerged as a promising alternative, offering superior rate--distortion performance and improved adaptability to diverse image content.
+
+Among these approaches, Generative Adversarial Network (GAN)-based models have demonstrated remarkable effectiveness in learned image compression, particularly in perceptual quality optimization. The High-Fidelity Image Compression (HiFiC) framework represents a state-of-the-art GAN-based solution, leveraging adversarial training to generate visually pleasing reconstructions at low bitrates \cite{mentzer2020high}. By incorporating a generator--discriminator architecture, HiFiC is capable of preserving fine-grained textures and semantic details that are often lost in conventional compression schemes.
+
+Despite their impressive compression performance, GAN-based models such as HiFiC introduce substantial computational complexity. The inference pipeline consists of deep convolutional networks with multiple residual blocks, high-dimensional feature maps, and intensive arithmetic operations. These characteristics make direct deployment on general-purpose processors inefficient for real-time or embedded applications, thereby motivating the use of hardware acceleration.
+
+Field-Programmable Gate Arrays (FPGAs) provide an attractive platform for accelerating deep learning workloads due to their inherent parallelism, reconfigurability, and favorable performance--power trade-offs. Modern FPGA platforms further enable tight integration between programmable logic and embedded processors, facilitating a hardware--software co-design paradigm. In such systems, computationally intensive kernels can be offloaded to dedicated hardware accelerators, while control and less demanding tasks are executed in software, resulting in a balanced and scalable system architecture.
+
+In this work, we present a hardware--software co-design approach for learned image compression based on a quantized HiFiC GAN model. The proposed design targets the inference stage of the HiFiC pipeline and accelerates its most computationally demanding components on FPGA using High-Level Synthesis (HLS). To achieve efficient hardware implementation, the neural network is quantized to FP16 precision, significantly reducing hardware resource usage while maintaining acceptable numerical accuracy. The accelerator is integrated into a heterogeneous system where hardware and software components cooperate seamlessly to perform end-to-end image compression.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Review of Previous Works}
+
+Learned image compression has been an active research area, with GAN-based models such as HiFiC achieving state-of-the-art perceptual quality at low bitrates \cite{mentzer2020high}. On the hardware side, a large body of work has accelerated convolutional neural networks on FPGA by exploiting parallel processing elements, on-chip buffering, and customized dataflow to improve throughput and energy efficiency. However, these efforts have mostly targeted classification or object-detection networks rather than generative image-compression models.
+
+To the best of our knowledge, the HiFiC GAN model has not previously been implemented on an FPGA. Existing learned-compression accelerators do not address the specific computational pattern of the HiFiC generator, which is dominated by repeated residual blocks containing convolution, normalization, activation, and skip connections. This thesis therefore addresses that gap by designing a hardware--software co-design that accelerates the HiFiC generator ResBlock on FPGA. Because no prior FPGA implementation of the same model exists for a direct head-to-head comparison, the proposed design is instead evaluated against the software (CPU) execution baseline, as presented in Chapter~4.
+
+% =====================================================================
+% TODO (tuy chon - Quoc Anh): neu muon phan review day du hon, co the bo
+% sung trich dan cac cong trinh CNN/GAN accelerator tren FPGA lien quan.
+% Hien chua co bang so sanh truc tiep vi chua ai implement HiFiC tren FPGA.
+% =====================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Research Objectives}
+
+The main objective of this thesis is to design and implement an FPGA-based accelerator for the quantized HiFiC GAN inference pipeline using a hardware--software co-design methodology. The specific contributions of the project are summarized as follows:
+\begin{itemize}
+    \item A hardware--software co-design framework for HiFiC GAN inference targeting learned image compression applications.
+    \item An FPGA-based accelerator architecture optimized for quantized GAN workloads using streaming dataflow and parallel processing elements.
+    \item A practical implementation and evaluation on the ZCU104 FPGA platform, demonstrating feasible performance, resource efficiency, and numerical accuracy.
+\end{itemize}
+
+\subsubsection{Functional Requirements}
+
+% =====================================================================
+% TODO (Quoc Anh cung cap): liet ke cac yeu cau chuc nang cu the, vi du:
+%   - Ho tro anh dau vao RGB 256x256.
+%   - Tang toc khoi ResBlock cua generator HiFiC.
+%   - Giao tiep PS-PL qua AXI (m_axi / s_axilite).
+%   - Bao toan chuc nang nen/giai nen so voi mo hinh Python tham chieu.
+% =====================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Non-functional Requirements}
+
+% =====================================================================
+% TODO (Quoc Anh cung cap): liet ke cac yeu cau phi chuc nang, vi du:
+%   - Tan so hoat dong muc tieu (vd 300 MHz).
+%   - Gioi han tai nguyen tren ZCU104 (LUT/FF/BRAM/URAM/DSP).
+%   - Muc tieu thong luong / speedup so voi phan mem.
+%   - Sai so chat luong tai tao chap nhan duoc (PSNR/SSIM).
+% Co the trinh bay bang kieu chi Linh (Table 1.2).
+% =====================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Implementation Plan and Timeline}
+
+% =====================================================================
+% TODO (Quoc Anh cung cap): bang phan cong cong viec + tien do
+%   (kieu chi Linh Table 1.3 "Proposed methodologies" va Table 1.4
+%   "Task planning and scheduling"). Goi y cot: Giai doan | Cong viec |
+%   Thanh vien phu trach | Thoi gian.
+% =====================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Chapter Conclusion}
+
+This chapter presented the motivation, objectives, and scope of the thesis. The remainder of this thesis is organized as follows:
+\begin{itemize}
+    \item \textbf{Chapter 2 -- Theoretical Background}: presents the background of CNNs, GANs and the HiFiC architecture, evaluation metrics, the FPGA platform, the High-Level Synthesis methodology, and the software tools used in this thesis.
+    \item \textbf{Chapter 3 -- Implementation}: describes the system-level architecture, the mixed-precision quantization strategy, the workload analysis, and the internal accelerator blocks of the proposed full generator accelerator.
+    \item \textbf{Chapter 4 -- Experimental Results}: presents the verification procedure, accuracy and quantization results, FPGA resource utilization, performance evaluation, and comparison results.
+    \item \textbf{Chapter 5 -- Conclusion}: summarizes the main achievements of the project and discusses potential directions for future work.
+\end{itemize}
+At the end of this thesis, the consulted literature is presented in the References section.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

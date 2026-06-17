@@ -1,0 +1,21 @@
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.run.xml
+*.bcf
+
+# Ignore specific build PDF
+EDABK_LSI_Contest_2026_GAN/main.pdf
+
+# Others
+.omc/
+.DS_Store
