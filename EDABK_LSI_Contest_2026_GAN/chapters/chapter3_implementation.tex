@@ -80,7 +80,7 @@ The PS--PL communication is organized through a small number of well-defined int
 \hline
 AXI4-Lite control & PS $\rightarrow$ PL & Transfers configuration values such as tensor dimensions, base addresses, start command, and status polling. \\
 \hline
-AXI master read & PL $\rightarrow$ DDR & Loads input feature maps, convolution weights, bias values, and normalization parameters from shared memory. \\
+AXI master read & DDR $\rightarrow$ PL & Loads input feature maps, convolution weights, bias values, and normalization parameters from shared memory. \\
 \hline
 AXI master write & PL $\rightarrow$ DDR & Writes the reconstructed output feature maps of the generator back to shared memory. \\
 \hline
@@ -326,7 +326,7 @@ Because each convolution layer is followed by normalization and activation, the 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.98\textwidth]{Images/Resblock Hardware Architecture.png}
+    \includegraphics[width=0.9\textwidth]{Images/resblock_architecture.png}
     \caption{Convolution-then-normalization datapath shared by the generator stages, shown for a residual block}
     \label{fig:resblock_architecture}
 \end{figure}
@@ -335,7 +335,7 @@ Figure~\ref{fig:two_pass_architecture} and Figure~\ref{fig:pipeline_timing} illu
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.0\textwidth]{Images/Two Pass architecture.png}
+    \includegraphics[width=1.0\textwidth]{Images/two_pass.jpg}
     \caption{Overlap of the convolution pass and the normalization/activation pass}
     \label{fig:two_pass_architecture}
 \end{figure}
