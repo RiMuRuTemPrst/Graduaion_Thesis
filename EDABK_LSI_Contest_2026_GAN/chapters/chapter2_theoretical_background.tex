@@ -68,9 +68,16 @@ For more complex neural networks, other activation functions may be selected to 
 
 \paragraph{Pooling and Down-Sampling Layers}
 
-Pooling layers reduce the spatial size of feature maps. This operation lowers computational complexity, decreases memory usage, and makes the learned representation more robust to small spatial shifts in the input image. The most common pooling methods are max pooling and average pooling. Max pooling selects the largest value in each local window, while average pooling computes the mean value of the window.
+Pooling layers reduce the spatial size of feature maps, which lowers computational complexity and decreases memory usage. In particular, max pooling selects the largest activation within each local window, producing a down-sampled feature map while preserving the most salient features from the input region. Figure~\ref{fig:max-pooling} illustrates this process: each pooling window is replaced by its maximum value, so the output feature map retains strong responses while its spatial dimensions are reduced.
 
-In many modern CNN-based compression and generation models, down-sampling may be performed by strided convolution instead of a separate pooling layer. Strided convolution has learnable parameters, so it can reduce resolution while also extracting features. This approach is useful in encoder networks, where the image must be transformed into a lower-resolution latent representation.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.72\textwidth]{Images/max_pooling.jpg}
+    \caption{Max pooling selects the maximum activation within each pooling window, producing a down-sampled feature map.}
+    \label{fig:max-pooling}
+\end{figure}
+
+Average pooling is another common method, but in image-compression and generative models, max pooling is often preferred when the goal is to preserve strong feature responses. In many modern CNN-based compression and generation models, down-sampling may also be performed by strided convolution instead of a separate pooling layer. Strided convolution has learnable parameters, so it can reduce resolution while also extracting features. This approach is useful in encoder networks, where the image must be transformed into a lower-resolution latent representation.
 
 \paragraph{Normalization Layer}
 
@@ -82,11 +89,20 @@ where $\mu$ and $\sigma^2$ are the mean and variance computed over the chosen di
 
 \paragraph{Residual Connections}
 
-A residual connection adds the input of a block directly to its output through a skip path, so that the convolutional path only has to learn a residual mapping $F(x)$ instead of a full transformation:
+As illustrated in Figure~\ref{fig:residual-connection}, a residual connection adds the input of a block directly to its output through a skip path, so that the convolutional path only has to learn a residual mapping $F(x)$ instead of a full transformation:
 \begin{equation}
 y = x + F(x),
 \end{equation}
-where $x$ is the input feature map and $F(x)$ is the transformation produced by the convolutional path. Residual connections improve gradient flow and feature reuse, which makes deep networks easier to train. The building block that implements this pattern is called a residual block (ResBlock). In the HiFiC generator, the ResBlock combines convolution, normalization, activation, and a skip connection, and is repeated many times. Because these repeated ResBlocks dominate the inference computation, they are the main target for hardware acceleration in this thesis.
+where $x$ is the input feature map and $F(x)$ is the transformation produced by the convolutional path. Residual connections improve gradient flow and feature reuse, which makes deep networks easier to train.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.72\textwidth]{Images/residual_connection.png}
+    \caption{Residual connection}
+    \label{fig:residual-connection}
+\end{figure}
+
+The building block that implements this pattern is called a residual block (ResBlock). In the HiFiC generator, the ResBlock combines convolution, normalization, activation, and a skip connection, and is repeated many times. Because these repeated ResBlocks dominate the inference computation, they are the main target for hardware acceleration in this thesis.
 
 \paragraph{Transposed Convolution and Up-Sampling}
 
