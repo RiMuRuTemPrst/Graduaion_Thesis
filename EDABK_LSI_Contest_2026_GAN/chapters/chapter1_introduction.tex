@@ -16,12 +16,19 @@ This chapter introduces the research project. It first explains the motivation f
 The digital world faces an unprecedented explosion in visual data generation. Modern applications across surveillance, medical imaging, remote sensing, and social media platforms continuously produce massive volumes of high-resolution visual content. In 2025 alone, the global data sphere reached 181 zettabytes, with videos accounting for approximately 82\% of all internet traffic \cite{explodingtopics2025}. This exponential growth creates a critical mismatch with existing storage and processing infrastructure:
 
 \begin{itemize}
-    \item \textbf{Rising Storage Costs:} Hard disk and solid-state drivers struggle to keep pace with petabyte-scale data generation. Storage infrastructure has become a significant bottleneck and cost driver for data-intensive applications.
+    \item \textbf{Rising Storage Costs:} The global datasphere is expanding relentlessly, from 45~ZB in 2019 to a projected 175~ZB by 2025 (Figure~\ref{fig:datasphere_growth}). Storage capacity, however, cannot keep pace: worldwide installed storage was only 6.7~ZB in 2020 -- roughly an order of magnitude below the data created that year -- less than 2\% of newly created data is actually retained, and capacity is expanding more slowly (a 19.2\% five-year CAGR) than data generation~\cite{idc2021storagesphere}. Consequently, even as the price per gigabyte of hard-disk and solid-state drives keeps falling, the sheer data volume outpaces these gains, so storage infrastructure remains a significant bottleneck and cost driver for data-intensive applications~\cite{idc2020dataage}.
 
     \item \textbf{Edge Processing Demand:} Real-time, high-resolution image compression on embedded IoT and edge devices is essential for surveillance systems, autonomous vehicles, medical devices, and remote monitoring applications. These systems must operate with strict latency, power, and memory constraints.
 
     \item \textbf{Legacy Compression Limitations:} Traditional standards such as JPEG and JPEG2000 rely on handcrafted transforms and fixed pipelines. They exhibit visible artifacts at high compression ratios and fail to adapt to modern image statistics, limiting their effectiveness for contemporary applications.
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Images/idc_datasphere_growth.png}
+    \caption[Annual size of the global datasphere, 2010--2025]{Annual size of the global datasphere, growing from a few zettabytes in 2010 to a projected 175~ZB by 2025 \cite{idc2020dataage}}
+    \label{fig:datasphere_growth}
+\end{figure}
 
 \subsubsection*{The Case for Learned Image Compression}
 
@@ -40,7 +47,7 @@ In this work, we present a hardware--software co-design approach for learned ima
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Review of Previous Works}
 
-Learned image compression has been an active research area, with GAN-based models such as HiFiC achieving state-of-the-art perceptual quality at low bitrates \cite{mentzer2020high}. On the hardware side, a large body of work has accelerated convolutional neural networks on FPGA by exploiting parallel processing elements, on-chip buffering, and customized dataflow to improve throughput and energy efficiency. However, these efforts have mostly targeted classification or object-detection networks rather than generative image-compression models.
+Learned image compression has been an active research area, with GAN-based models such as HiFiC achieving state-of-the-art perceptual quality at low bitrates \cite{mentzer2020high}. On the hardware side, a large body of work has accelerated convolutional neural networks on FPGA by exploiting parallel processing elements, on-chip buffering, and customized dataflow to improve throughput and energy efficiency. However, these efforts have mostly targeted classification or object-detection networks rather than generative image-compression models. A notable recent exception deploys a learned image-compression model on FPGA using knowledge distillation and hybrid quantization to reduce hardware cost \cite{mazouz2025lightweight}; however, it accelerates a non-generative autoencoder codec, whereas this thesis targets a GAN-based perceptual generator.
 
 Table~\ref{tab:model_survey} surveys representative learned image compression models together with the traditional VVC/H.266 video coding standard. These span traditional coding \cite{bross2021vvc}, CNN-based variational autoencoders \cite{cheng2020learned}, transformer-based models \cite{zou2022stf}, hybrid CNN--transformer designs \cite{liu2023tcm}, and GAN-based perceptual compression \cite{mentzer2020high}. The models optimized purely for rate--distortion (Cheng~2020, STF, TCM) reach higher PSNR and MS-SSIM, whereas HiFiC, which is optimized for perceptual quality, attains the best (lowest) LPIPS at the cost of a lower PSNR. Because perceptual quality at low bitrates is the priority for the target applications, and because the HiFiC generator is built from repeated residual blocks that form a regular, hardware-friendly computational pattern, HiFiC is selected as the model to accelerate in this thesis.
 
