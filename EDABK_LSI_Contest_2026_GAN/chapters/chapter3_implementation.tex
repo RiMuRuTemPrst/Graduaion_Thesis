@@ -356,7 +356,7 @@ Figure~\ref{fig:two_pass_architecture} and Figure~\ref{fig:pipeline_timing} illu
 
 \subsubsection*{Fusion Core Block Diagram}
 
-A single shared engine implements the initial convolution block, the nine residual blocks, and the global skip addition. Because the CBI, the nine residual blocks, and the global add all operate on the same $16\times16\times960$ tensor, they are mapped to one hardware instance that is invoked repeatedly with different parameters, rather than replicated. To keep this as a single instance, every call passes the same set of ports; if some calls passed null pointers and others did not, the tool would infer two different instances and exceed the on-chip memory budget. The engine uses sixteen PEs (128 MAC/cycle) with the rotating accumulator, and stores two large skip tensors in UltraRAM (URAM): a \emph{global skip buffer} that holds the CBI output until the global add, and a \emph{skip-connection buffer} that holds the input of each residual block until its residual add. The complete block diagram, which brings together the AXI master interfaces, the input/weight/parameter buffers, the PE cluster, the normalization/activation logic, and the URAM skip buffers, is shown in Figure~\ref{fig:fusion_core}.
+A single shared engine implements the initial convolution block, the nine residual blocks, and the global skip addition. Because the CBI, the nine residual blocks, and the global add all operate on the same $16\times16\times960$ tensor, they are mapped to one hardware instance that is invoked repeatedly with different parameters, rather than replicated. To keep this as a single instance, every call passes the same set of ports; if some calls passed null pointers and others did not, the tool would infer two different instances and exceed the on-chip memory budget. The engine uses sixteen PEs with the rotating accumulator, and stores a large skip tensor in UltraRAM (URAM): a \emph{skip-connection buffer} that holds the input of each residual block until its residual add and the CBI output until the global add. The complete block diagram, which brings together the AXI master interfaces, the input/weight/parameter buffers, the PE cluster, the normalization/activation logic, and the URAM skip buffers, is shown in Figure~\ref{fig:fusion_core}.
 
 \begin{figure}[H]
     \centering
@@ -422,7 +422,7 @@ Figure~\ref{fig:upconv_timing} shows the timing path of the up-convolution engin
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Images/UCB_timing.jpeg}
+    \includegraphics[width=\textwidth]{Images/timing_UCB.jpg}
     \caption{Timing path of the up-convolution engine for the first up-convolution block (UCB\_0), overlapping input-row loading with output-row computation. All cycle counts shown are measured for UCB\_0.}
     \label{fig:upconv_timing}
 \end{figure}
