@@ -13,7 +13,7 @@ This chapter introduces the research project. It first explains the motivation f
 
 \subsubsection*{The Image Data Explosion}
 
-The digital world faces an unprecedented explosion in visual data generation. Modern applications across surveillance, medical imaging, remote sensing, and social media platforms continuously produce massive volumes of high-resolution visual content. In 2025 alone, the global data sphere reached 181 zettabytes, with videos accounting for approximately 82\% of all internet traffic \cite{explodingtopics2025}. This exponential growth creates a critical mismatch with existing storage and processing infrastructure:
+The digital world faces an unprecedented explosion in visual data generation. Modern applications across surveillance, medical imaging, remote sensing, and social media platforms continuously produce massive volumes of high-resolution visual content. By 2025, the global datasphere had grown to roughly 175 zettabytes \cite{idc2020dataage}, with video accounting for approximately 82\% of all internet traffic \cite{explodingtopics2025}. This exponential growth creates a critical mismatch with existing storage and processing infrastructure:
 
 \begin{itemize}
     \item \textbf{Rising Storage Costs:} The global datasphere is expanding relentlessly, from 45~ZB in 2019 to a projected 175~ZB by 2025 (Figure~\ref{fig:datasphere_growth}). Storage capacity, however, cannot keep pace: worldwide installed storage was only 6.7~ZB in 2020 -- roughly an order of magnitude below the data created that year -- less than 2\% of newly created data is actually retained, and capacity is expanding more slowly (a 19.2\% five-year CAGR) than data generation~\cite{idc2021storagesphere}. Consequently, even as the price per gigabyte of hard-disk and solid-state drives keeps falling, the sheer data volume outpaces these gains, so storage infrastructure remains a significant bottleneck and cost driver for data-intensive applications~\cite{idc2020dataage}.
@@ -49,7 +49,7 @@ In this work, we present a hardware--software co-design approach for learned ima
 
 Learned image compression has been an active research area, with GAN-based models such as HiFiC achieving state-of-the-art perceptual quality at low bitrates \cite{mentzer2020high}. On the hardware side, a large body of work has accelerated convolutional neural networks on FPGA by exploiting parallel processing elements, on-chip buffering, and customized dataflow to improve throughput and energy efficiency. However, these efforts have mostly targeted classification or object-detection networks rather than generative image-compression models. A notable recent exception deploys a learned image-compression model on FPGA using knowledge distillation and hybrid quantization to reduce hardware cost \cite{mazouz2025lightweight}; however, it accelerates a non-generative autoencoder codec, whereas this thesis targets a GAN-based perceptual generator.
 
-Table~\ref{tab:model_survey} surveys representative learned image compression models together with the traditional VVC/H.266 video coding standard. These span traditional coding \cite{bross2021vvc}, CNN-based variational autoencoders \cite{cheng2020learned}, transformer-based models \cite{zou2022stf}, hybrid CNN--transformer designs \cite{liu2023tcm}, and GAN-based perceptual compression \cite{mentzer2020high}. The models optimized purely for rate--distortion (Cheng~2020, STF, TCM) reach higher PSNR and MS-SSIM, whereas HiFiC, which is optimized for perceptual quality, attains the best (lowest) LPIPS at the cost of a lower PSNR. Because perceptual quality at low bitrates is the priority for the target applications, and because the HiFiC generator is built from repeated residual blocks that form a regular, hardware-friendly computational pattern, HiFiC is selected as the model to accelerate in this thesis.
+Table~\ref{tab:model_survey} surveys representative learned image compression models together with the traditional VVC/H.266 video coding standard. These span traditional coding \cite{bross2021vvc}, CNN-based variational autoencoders \cite{cheng2020learned}, transformer-based models \cite{zou2022stf}, hybrid CNN--transformer designs \cite{liu2023tcm}, and GAN-based perceptual compression \cite{mentzer2020high}. The models optimized purely for rate--distortion (Cheng~2020, STF, TCM) reach higher PSNR and MS-SSIM, whereas HiFiC, which is optimized for perceptual quality, attains the best (lowest) LPIPS at the cost of a lower PSNR. The figures in Table~\ref{tab:model_survey} are dataset-averaged values reported in the respective papers at approximately 0.4~bpp, and are therefore not directly comparable to the single-image, higher-bitrate measurement reported in Chapter~4. Because perceptual quality at low bitrates is the priority for the target applications, and because the HiFiC generator is built from repeated residual blocks that form a regular, hardware-friendly computational pattern, HiFiC is selected as the model to accelerate in this thesis.
 
 \begin{table}[H]
 \centering
@@ -133,14 +133,16 @@ Target device & Xilinx Zynq UltraScale+ MPSoC ZCU104 \\
 \hline
 Development flow & Vitis HLS, Vivado, and Vitis (embedded software) \\
 \hline
-Operating frequency & 200 MHz \\
+Operating frequency & $\geq 200$~MHz (minimum target) \\
 \hline
-Throughput & $\geq 30$ GOPS (Giga Operations Per Second) \\
+Throughput & $\geq 30$~GOPS (Giga Operations Per Second; minimum target) \\
 \hline
 Quantization & Mixed-precision FP16 (FP32 reference baseline) \\
 \hline
 \end{tabularx}
 \end{table}
+
+The operating frequency and throughput in Table~\ref{tab:design_specs} are minimum targets fixed at the specification stage, not the final achieved values. As reported in Chapter~4, the realized implementation comfortably exceeds these targets, closing timing at 300~MHz (maximum 308.74~MHz) and sustaining a throughput of 122.8~GOPS.
 
 \subsubsection{Functional Requirements}
 
@@ -168,21 +170,21 @@ Beyond the headline targets listed in the design specifications (Table~\ref{tab:
 \hline
 \textbf{Requirement Category} & \textbf{Target Specification} \\
 \hline
-\textbf{FPGA LUT} &  \\
+\textbf{FPGA LUT} & $\leq 230{,}400$ (within the XCZU7EV budget) \\
 \hline
-\textbf{FPGA Flip-Flop} &  \\
+\textbf{FPGA Flip-Flop} & $\leq 460{,}800$ (within the XCZU7EV budget) \\
 \hline
-\textbf{FPGA BRAM} &  \\
+\textbf{FPGA BRAM} & $\leq 624$ (18\,Kb blocks; within the XCZU7EV budget) \\
 \hline
-\textbf{FPGA URAM} &  \\
+\textbf{FPGA URAM} & $\leq 96$ (within the XCZU7EV budget) \\
 \hline
-\textbf{FPGA DSP} & \\
+\textbf{FPGA DSP} & $\leq 1{,}728$ (within the XCZU7EV budget) \\
 \hline
 \textbf{Memory Bandwidth} & Efficient utilization of AXI bandwidth for data movement between DDR and accelerator \\
 \hline
 \textbf{Accuracy Preservation} & Maintain image quality metrics (PSNR, MS-SSIM, LPIPS) within acceptable tolerance compared to FP32 reference \\
 \hline
-\textbf{Latency} & Achieve 100x speedup over the Intel Core i9 CPU software baseline  \\
+\textbf{Latency} & Achieve at least a $100\times$ speedup over the single-threaded Intel Core i9 CPU software reference (minimum target) \\
 \hline
 \textbf{Power Efficiency} & Demonstrate energy efficiency improvements over a pure software (CPU) implementation \\
 \hline

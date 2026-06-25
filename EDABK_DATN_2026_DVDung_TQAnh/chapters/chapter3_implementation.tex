@@ -254,7 +254,7 @@ The Processing Element (PE) is the basic arithmetic unit of the accelerator. Eac
     \label{fig:pe_architecture}
 \end{figure}
 
-As shown in Figure~\ref{fig:pe_architecture}, each PE contains eight parallel multipliers (eight MAC operations per cycle), an adder tree, an accumulation register, and bias addition. The multipliers are mapped to FPGA DSP resources, while the adder tree reduces the partial products with low latency. Multiple PEs are instantiated to form a PE cluster: the Fusion Core uses sixteen PEs ($\text{PEs}_F = 16$), giving $16 \times 8 = 128$ MAC operations per cycle when the inner MAC loop runs at $\text{II}=1$. Each PE is assigned to a different output column or lane, which increases throughput by computing several convolution outputs in parallel while reusing the same buffered input data across lanes.
+As shown in Figure~\ref{fig:pe_architecture}, each PE contains sixteen parallel multipliers (sixteen MAC operations per cycle, i.e.\ a 16-wide dot product over one 256-bit word that packs sixteen FP16 channels), an adder tree, an accumulation register, and bias addition. The multipliers are mapped to FPGA DSP resources, while the adder tree reduces the partial products with low latency. Multiple PEs are instantiated to form a PE cluster: the Fusion Core uses sixteen PEs ($\text{PEs}_F = 16$), giving $16 \times 16 = 256$ MAC operations per cycle when the inner MAC loop runs at $\text{II}=1$. Each PE is assigned to a different output column or lane, which increases throughput by computing several convolution outputs in parallel while reusing the same buffered input data across lanes.
 
 A key difficulty with FP16 accumulation is that a half-precision adder has a latency of three to four cycles, which would normally prevent a new accumulation every cycle. To still reach $\text{II}=1$, the design uses a \emph{rotating accumulator}: instead of a single accumulator, each PE keeps a small array of partial sums \texttt{psum[PE][D]} and rotates the write index every cycle (for example \texttt{acc\_idx = i \& 3} for depth four). The distance between two read-after-write dependencies on the same slot then equals the accumulator depth, which is greater than or equal to the adder latency, so the pipeline never stalls. After the loop finishes, the partial sums in each slot are reduced into the final result.
 
@@ -349,7 +349,7 @@ To understand why these two stages are needed, it helps to contrast the two oper
 
 \subsubsection*{Execution Timing}
 
-Figure~\ref{fig:upconv_timing} shows the timing path of the up-convolution engine, in which the loading of input rows is overlapped with the computation of output rows. The cycle counts in the figure are measured for the first up-convolution block, UCB\_0 (input $16\times16\times960$, output $32\times32\times480$): after a short initialization (\texttt{RESET\_ROW\_ACC}, $1{,}026$ cycles, and \texttt{LOAD\_PARAMS} for bias, beta, and gamma, $162$ cycles), the engine iterates the tile loop $41$ times, each iteration loading a weight tile ($4{,}449$ cycles) and performing the 8-channel MAC compute ($69{,}483$ cycles). The tile loop therefore dominates at $41 \times 69{,}483 = 2{,}848{,}803$ cycles, followed by the normalization-and-write stage (statistics and normalization, $23{,}363$ cycles), giving a total latency of $2{,}878{,}197$ cycles for UCB\_0.
+Figure~\ref{fig:upconv_timing} shows the timing path of the up-convolution engine, in which the loading of input rows is overlapped with the computation of output rows. The cycle counts in the figure are measured for the first up-convolution block, UCB\_0 (input $16\times16\times960$, output $32\times32\times480$): after a short initialization (\texttt{RESET\_ROW\_ACC}, $1{,}026$ cycles, and \texttt{LOAD\_PARAMS} for bias, beta, and gamma, $162$ cycles), the engine iterates the tile loop $41$ times, each iteration loading a weight tile ($4{,}449$ cycles, overlapped with the compute) and performing the 8-channel MAC compute ($69{,}483$ cycles). The tile loop therefore dominates at $41 \times 69{,}483 = 2{,}848{,}803$ cycles, followed by the normalization-and-write stage (statistics and normalization, $23{,}363$ cycles), giving a total latency of $1{,}026 + 162 + 2{,}848{,}803 + 23{,}363 = 2{,}873{,}354$ cycles for UCB\_0.
 
 \begin{figure}[H]
     \centering
@@ -380,7 +380,7 @@ Global skip buffer & $16\times16\times960$ & URAM & CBI output for the global ad
 \hline
 Row accumulator & $256\times480$ & URAM (32 banks) & up-convolution output accumulation \\
 \hline
-Fusion window buffer & $4\times W\times60$ & BRAM & sliding-window input feature map \\
+Fusion window buffer & $4\times W\times960$ & BRAM & sliding-window input feature map \\
 \hline
 Conv77 window buffer & $7\times14\times64$ & BRAM & sliding window of the $7\times7$ convolution \\
 \hline

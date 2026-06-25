@@ -5,9 +5,9 @@ This thesis designs and implements an FPGA accelerator for the inference stage o
 
 The main contributions of the thesis are summarized as follows:
 \begin{itemize}
-    \item A post-training mixed-precision quantization of the HiFiC model, with FP32 input/output interfaces and FP16 internal computation, that preserves compression quality: PSNR and SSIM remain almost unchanged compared with the FP32 baseline.
+    \item A post-training mixed-precision quantization of the HiFiC model, with FP32 input/output interfaces and FP16 internal computation, that preserves compression quality: PSNR, SSIM, and LPIPS remain almost unchanged compared with the FP32 baseline.
     \item A full-generator accelerator built with High-Level Synthesis, organized into a Fusion core (initial convolution, nine residual blocks, and the global skip), an up-convolution core, and a final $7\times7$ convolution core, using line buffers, parallel processing-element clusters, and a rotating accumulator to maximize data reuse and on-chip parallelism.
-    \item A complete implementation on the ZCU104 platform operating at 300~MHz (maximum 308.74~MHz) that reconstructs one $256\times256$ image in 735.6~ms at a throughput of 122.8~GOPS, about $1459\times$ faster than the CPU software baseline.
+    \item A complete implementation on the ZCU104 platform operating at 300~MHz (maximum 308.74~MHz) that reconstructs one $256\times256$ image in 735.6~ms at a throughput of 122.8~GOPS, about $1459\times$ faster than a single-threaded CPU software reference.
 \end{itemize}
 
 These results show that FPGA-based acceleration is a practical and effective approach for deploying GAN-based learned image compression, and provide a foundation for more comprehensive hardware deployment in future work.

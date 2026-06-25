@@ -55,7 +55,7 @@ The target board used for implementation is the Zynq\texttrademark{} UltraScale+
 
 \begin{table}[H]
     \centering
-    \caption{Relevant ZCU104 components for accelerator evaluation}
+    \caption[Relevant ZCU104 components for accelerator evaluation]{Relevant ZCU104 components for accelerator evaluation (the item numbers follow the board component callouts in the ZCU104 user guide~\cite{xilinx2018zcu104})}
     \label{tab:zcu104_components}
     \begin{tabular}{|c|l|}
         \hline
@@ -115,7 +115,7 @@ Every block passes with zero element mismatches, which confirms that the mixed-p
 
 \subsubsection{Test Images and Evaluation Metrics}
 
-The evaluation uses representative RGB images resized to $256 \times 256$, consistent with the input size used throughout this thesis. The reconstructed images are evaluated using image-quality metrics introduced in Chapter~2, including Peak Signal-to-Noise Ratio (PSNR), Structural Similarity Index Measure (SSIM), and Mean Squared Error (MSE). These metrics are suitable for checking whether the quantized hardware-oriented implementation remains close to the software reference.
+The evaluation uses representative RGB images resized to $256 \times 256$, consistent with the input size used throughout this thesis. The reconstructed images are evaluated using image-quality metrics introduced in Chapter~2, including Peak Signal-to-Noise Ratio (PSNR), Structural Similarity Index Measure (SSIM), Learned Perceptual Image Patch Similarity (LPIPS), and Mean Squared Error (MSE). These metrics are suitable for checking whether the quantized hardware-oriented implementation remains close to the software reference.
 
 Figure~\ref{fig:chapter4_psnr_comparison} shows the PSNR comparison between the Python reference model and the HLS simulation model over 100 test images. The similarity of the two curves indicates that the HLS implementation follows the numerical behavior of the reference model closely enough for FPGA deployment.
 
@@ -148,12 +148,15 @@ Space Saving (\%) & 74.80 & 74.82 & +0.02 \\
 Bits Per Pixel (bpp) & 0.7961 & 0.7955 & -0.0006 \\
 PSNR (dB) & 19.08 & 19.05 & -0.03 \\
 SSIM & 0.8315 & 0.8314 & -0.0001 \\
+LPIPS & 0.0913 & 0.0925 & +0.0012 \\
 MSE  &  804.315755 & 808.560496 & 4.244 \\
 \hline
 \end{tabular}
 \end{table}
 
-The results indicate that the compression performance of the HiFiC model is preserved after quantization. The bitstream size is slightly reduced, while the compression ratio and space-saving metrics remain unchanged. This suggests that the probability distribution of the latent representation is not significantly affected by FP16 rounding errors, allowing the entropy coding process to operate efficiently. From a perceptual quality perspective, the degradation introduced by mixed-precision computation is negligible: the observed PSNR reduction of 0.03~dB is well below the threshold of perceptual visibility, and the SSIM metric remains nearly identical between the two configurations.
+The results indicate that the compression performance of the HiFiC model is preserved after quantization. The bitstream size is slightly reduced, while the compression ratio and space-saving metrics remain unchanged. This suggests that the probability distribution of the latent representation is not significantly affected by FP16 rounding errors, allowing the entropy coding process to operate efficiently. From a perceptual quality perspective, the degradation introduced by mixed-precision computation is negligible: the observed PSNR reduction of 0.03~dB is well below the threshold of perceptual visibility, the SSIM metric remains nearly identical, and the LPIPS perceptual distance rises by only 0.0012 (from 0.0913 to 0.0925) between the two configurations.
+
+The absolute PSNR reported here (19.08~dB) is noticeably lower than the $\sim$28.5~dB listed for HiFiC in the survey of Table~\ref{tab:model_survey}. This gap is not caused by quantization---the FP32$\rightarrow$FP16 difference is only 0.03~dB---but by the different evaluation conditions. The survey value is a dataset-averaged figure reported in the original HiFiC paper on standard benchmarks at $\sim$0.4~bpp, whereas the value here is measured on a single $256\times256$ test image. Because HiFiC is optimized for perceptual quality rather than pixel-wise distortion, its PSNR is inherently modest and strongly content-dependent, so a single textured image can score well below the dataset average while remaining perceptually faithful, as confirmed by the visual comparison in Figure~\ref{fig:quant_visual}, the high SSIM of 0.83, and especially the low LPIPS of 0.0913---in line with, and even slightly better than, the $\sim$0.15 dataset-averaged LPIPS reported for HiFiC in Table~\ref{tab:model_survey}---which together evidence strong perceptual fidelity despite the modest PSNR. To strengthen the statistical reliability of the absolute quality figures, this measurement should be repeated over a larger image set (at least three images) in future work; the single-image measurement is sufficient for its purpose here, which is to isolate the FP32-versus-FP16 quantization delta.
 
 Figure~\ref{fig:quant_visual} provides a visual comparison between the reconstructed images produced by the FP32 and FP16 models. No visible artifacts or structural distortions are observed in the quantized output, confirming that the proposed mixed-precision quantization strategy achieves a favorable balance between numerical efficiency and output fidelity.
 
@@ -188,7 +191,7 @@ Figure~\ref{fig:quant_visual} provides a visual comparison between the reconstru
 % \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Resource Utilization and Power Measurement}
+\subsection{Resource Utilization and Power Considerations}
 
 After functional verification, the complete generator accelerator was synthesized and implemented on the ZCU104 FPGA platform to evaluate resource utilization. The implementation result reflects the cost of mapping all three generator stages (Fusion, UpConv, and Conv77), their local buffering, AXI-based data movement, and control logic into the Programmable Logic (PL). The target clock frequency is 300~MHz, and the implemented design closes timing with a maximum frequency of 308.74~MHz.
 
@@ -247,7 +250,7 @@ To show how each core contributes to the overall cost, Table~\ref{tab:resource_b
 
 In Table~\ref{tab:resource_breakdown}, the percentage in each cell is taken relative to the resources available on the XCZU7EV device (624 BRAM\_18K, 1{,}728 DSP, 460{,}800 FF, 230{,}400 LUT, and 96 URAM). The figures correspond to the synthesis estimate of each core before the final data-buffer rebalancing step (PIPO double-buffering), which redistributes storage between BRAM and URAM and moves part of the FP16 multipliers from the DSP slices to LUT fabric without changing functionality. The fully implemented design therefore closes at the slightly different resource figures reported in Table~\ref{tab:hific_generator_utilization} (1,550 DSPs, 510 BRAMs, all 96 URAMs, and 205,233 LUTs).
 
-Power measurement is evaluated as part of board-level deployment. In this design, the main contributors to dynamic power are expected to be DSP activity, BRAM/URAM access, AXI memory transfers, and clocked control logic. Therefore, reducing unnecessary memory movement and improving data reuse are important not only for performance but also for power efficiency.
+On-board power was not measured in this work; a quantitative power evaluation is left for future board-level deployment. Qualitatively, the main contributors to dynamic power are DSP activity, BRAM/URAM access, AXI memory transfers, and clocked control logic, so reducing unnecessary memory movement and improving data reuse are important not only for performance but also for power efficiency. As an order-of-magnitude reference, the ZCU104 programmable logic typically operates within an envelope of roughly 8--15~W for designs at this utilization, about an order of magnitude below desktop- and laptop-class GPUs ($\sim$60--80~W). This favorable power envelope, rather than raw wall-clock latency, is the basis for the performance-per-watt argument discussed in the comparison below.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Performance Evaluation}
@@ -338,11 +341,11 @@ The latency of the design is deterministic and is obtained from the per-loop syn
         \cline{2-4}
          & GlobalAdd & 15,507 & 0.05~ms \\
         \hline
-        UpConv & $4\times$ UCB (after dataflow opt.) & --- & 149.0~ms \\
+        UpConv & $4\times$ UCB (after dataflow opt.) & 44,700,000 & 149.0~ms \\
         \hline
-        Conv77 & Conv $7\times7$ + Clip & $\sim$5.3\,M & 17.75~ms \\
+        Conv77 & Conv $7\times7$ + Clip & 5,325,000 & 17.75~ms \\
         \hline
-        \multicolumn{2}{|l|}{\textbf{Total (per image)}} & & \textbf{735.6~ms} \\
+        \multicolumn{2}{|l|}{\textbf{Total (per image)}} & \textbf{220,667,582} & \textbf{735.6~ms} \\
         \hline
     \end{tabular}
 \end{table}
@@ -377,7 +380,7 @@ The performance result shows that the accelerator benefits from parallel DSP com
 
 To the best of our knowledge, the HiFiC model has not previously been implemented on an FPGA, so there is no prior hardware accelerator of the same model to compare against directly. Therefore, this section evaluates the proposed accelerator by comparing its performance against the software execution baseline, focusing on the acceleration ratio (speedup) and throughput.
 
-The software baseline corresponds to the full generator inference profiled on an Intel Core i9 CPU operating at 2.2~GHz, which takes 1073.19~s per image, as reported in the runtime breakdown of Table~\ref{tab:runtime_breakdown} in Chapter~3. This long CPU runtime is a direct consequence of the very large feature tensors of the generator (for example, $16\times16\times960$ inside each residual block). The proposed accelerator executes the same generator on the ZCU104 platform at 300~MHz in 735.6~ms using mixed FP16 precision. Table~\ref{tab:performance_comparison} summarizes the comparison.
+The software baseline corresponds to the full generator inference profiled on an Intel Core i9 CPU operating at 2.2~GHz, which takes 1073.19~s per image, as reported in the runtime breakdown of Table~\ref{tab:runtime_breakdown} in Chapter~3. This baseline is a single-threaded, unoptimized C reference implementation that also serves as the functional golden model; its long runtime is a direct consequence of the very large feature tensors of the generator (for example, $16\times16\times960$ inside each residual block) combined with the absence of multi-threading and vectorization. The proposed accelerator executes the same generator on the ZCU104 platform at 300~MHz in 735.6~ms using mixed FP16 precision. For additional context, the same generator was also profiled on a desktop-class GPU (NVIDIA RTX~3060 Laptop, FP32), which completes one image in 25.1~ms. Table~\ref{tab:performance_comparison} summarizes the comparison.
 
 \begin{table}[H]
     \centering
@@ -387,10 +390,10 @@ The software baseline corresponds to the full generator inference profiled on an
         \hline
         \textbf{Platform} & \textbf{Device} & \textbf{Precision} & \textbf{Latency} & \textbf{Speedup} \\
         \hline
-        Software (CPU) & Intel Core i9 @ 2.2~GHz & FP32 & 1073.19~s & $1\times$ \\
+        Software (CPU, single-thread ref.) & Intel Core i9 @ 2.2~GHz & FP32 & 1073.19~s & $1\times$ \\
         \hline
-        % TODO (Quoc Anh): neu co do them tren GPU, them mot hang o day:
-        % GPU & <ten GPU> & FP32/FP16 & <latency> & <speedup> \\
+        GPU (desktop-class) & NVIDIA RTX 3060 Laptop & FP32 (cuDNN) & 25.1~ms & $\approx 42{,}700\times$ \\
+        \hline
         Proposed FPGA & ZCU104 (XCZU7EV) @ 300~MHz & Mixed FP16 & 735.6~ms & $\approx 1459\times$ \\
         \hline
     \end{tabular}
@@ -398,11 +401,7 @@ The software baseline corresponds to the full generator inference profiled on an
 
 The comparison shows that running the full generator on the FPGA reduces the per-image processing time from 1073.19~s on the CPU to 735.6~ms, an acceleration of approximately $1459\times$, while sustaining a throughput of 122.8~GOPS. This large speedup is obtained even though the FPGA operates at a much lower clock frequency than the CPU, because the accelerator exploits spatial parallelism through many processing elements, local on-chip buffering, and overlapped convolution and normalization passes that keep the MAC datapath busy. The result confirms that dedicated hardware is essential for the compute-bound HiFiC generator, whose very large feature tensors make plain CPU execution impractical.
 
-% =====================================================================
-% NOTE (Quoc Anh): bang so sanh hien co CPU (1073.19 s, da do thuc) vs
-% FPGA (735.6 ms). Neu sau nay co them so lieu do tren GPU thi dien vao
-% hang GPU (comment o bang tren) de co day du CPU / GPU / FPGA.
-% =====================================================================
+It should be emphasized that these speedup ratios are measured against the single-threaded, unoptimized reference C implementation and therefore quantify acceleration over that specific software reference rather than over peak-optimized software. An optimized, multi-threaded CPU library (for example, oneDNN) executes the same generator in a few hundred milliseconds, comparable to the FPGA, and a desktop-class GPU is faster still in raw wall-clock time (25.1~ms). The proposed accelerator is therefore not positioned as the fastest wall-clock platform; its advantage lies in deterministic, low-latency inference within an embedded power envelope (programmable-logic power on the order of 8--15~W, against roughly 60--80~W for the GPU), that is, a favorable performance-per-watt for resource-constrained deployment. A full performance-per-watt comparison based on on-board power measurement is left for future work.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Chapter Conclusion}
