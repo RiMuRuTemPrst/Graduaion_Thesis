@@ -40,7 +40,7 @@ However, the deployment of GAN-based compression models in real-world systems fa
 
 Field-Programmable Gate Arrays (FPGAs) provide an attractive platform for addressing this deployment gap. They offer inherent parallelism, fine-grained reconfigurability, and favorable performance--power trade-offs compared to general-purpose processors. Modern heterogeneous FPGA systems enable tight integration between programmable logic and embedded processors (ARM Cortex), facilitating a hardware--software co-design paradigm where computationally intensive kernels are offloaded to dedicated accelerators while control logic and less demanding tasks execute in software.
 
-\subsubsection*{Project Motivation}
+\subsubsection*{Thesis Motivation}
 
 In this work, we present a hardware--software co-design approach for learned image compression based on a quantized HiFiC GAN model targeting embedded deployment. The proposed design accelerates the HiFiC generator pipeline on FPGA using High-Level Synthesis (HLS), with quantization to FP16 mixed-precision to reduce hardware resource requirements while maintaining acceptable numerical accuracy. The resulting system demonstrates how algorithmic innovation (GAN-based compression) and hardware optimization (FPGA acceleration) can be combined to enable practical, real-time image compression on resource-constrained platforms.
 
@@ -133,9 +133,9 @@ Target device & Xilinx Zynq UltraScale+ MPSoC ZCU104 \\
 \hline
 Development flow & Vitis HLS, Vivado, and Vitis (embedded software) \\
 \hline
-Operating frequency & $\geq 200$~MHz (minimum target) \\
+Operating frequency & $\geq 200$~MHz \\
 \hline
-Throughput & $\geq 30$~GOPS (Giga Operations Per Second; minimum target) \\
+Throughput & $\geq 30$~GOPS \\
 \hline
 Quantization & Mixed-precision FP16 (FP32 reference baseline) \\
 \hline
@@ -184,7 +184,7 @@ Beyond the headline targets listed in the design specifications (Table~\ref{tab:
 \hline
 \textbf{Accuracy Preservation} & Maintain image quality metrics (PSNR, MS-SSIM, LPIPS) within acceptable tolerance compared to FP32 reference \\
 \hline
-\textbf{Latency} & Achieve at least a $100\times$ speedup over the single-threaded Intel Core i9 CPU software reference (minimum target) \\
+\textbf{Latency} & Achieve at least a $100\times$ speedup over the single-threaded Intel Core i9 CPU software reference \\
 \hline
 \textbf{Power Efficiency} & Demonstrate energy efficiency improvements over a pure software (CPU) implementation \\
 \hline
@@ -194,11 +194,11 @@ Beyond the headline targets listed in the design specifications (Table~\ref{tab:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Implementation Plan and Timeline}
 
-To meet the design specifications and requirements defined above, this project adopts a set of hardware-oriented methodologies, summarized in Table~\ref{tab:methodologies}. These methodologies follow directly from the streaming, convolution-heavy nature of the HiFiC generator and from the resource constraints of the ZCU104 platform.
+To meet the design specifications and requirements defined above, this thesis adopts a set of hardware-oriented methodologies, summarized in Table~\ref{tab:methodologies}. These methodologies follow directly from the streaming, convolution-heavy nature of the HiFiC generator and from the resource constraints of the ZCU104 platform.
 
 \begin{table}[H]
 \centering
-\caption{Proposed methodologies used in the project}
+\caption{Proposed methodologies used in the thesis}
 \label{tab:methodologies}
 \renewcommand{\arraystretch}{1.3}
 \begin{tabularx}{\textwidth}{|c|>{\raggedright\arraybackslash}p{0.34\textwidth}|X|}
@@ -257,7 +257,7 @@ This chapter presented the motivation, objectives, and scope of the thesis. The 
     \item \textbf{Chapter 2 -- Theoretical Background}: presents the background of CNNs, GANs and the HiFiC architecture, evaluation metrics, the FPGA platform, the High-Level Synthesis methodology, and the software tools used in this thesis.
     \item \textbf{Chapter 3 -- Implementation}: describes the system-level architecture, the mixed-precision quantization strategy, the workload analysis, and the internal accelerator blocks of the proposed full generator accelerator.
     \item \textbf{Chapter 4 -- Experimental Results}: presents the verification procedure, accuracy and quantization results, FPGA resource utilization, performance evaluation, and comparison results.
-    \item \textbf{Chapter 5 -- Conclusion}: summarizes the main achievements of the project and discusses potential directions for future work.
+    \item \textbf{Chapter 5 -- Conclusion}: summarizes the main achievements of the thesis and discusses potential directions for future work.
 \end{itemize}
 At the end of this thesis, the consulted literature is presented in the References section.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
